@@ -1,0 +1,63 @@
+#!/usr/bin/ruby
+
+require "rubygems"
+require "bundler/setup"
+require "optparse"
+require "mysql2"
+require "timeout"
+require "net/ssh/gateway"
+
+options = {
+  :host => "127.0.0.1",
+  :username => "root",
+  :key_path => "~/.ssh/id_rsa",
+  :mysql_host => "127.0.0.1",
+  :mysql_username => "root",
+  :mysql_password => "",
+  :mysql_port => 3306
+}
+
+OptionParser.new do |opts|
+  opts.on("--host HOST") { |host| options[:host] = host } 
+  opts.on("--username USERNAME") { |username| options[:username] = username }
+  opts.on("--key-path KEY_PATH") { |key_path| options[:key_path] = key_path }
+  opts.on("--mysql-host MYSQL_HOST") { |mysql_host| options[:mysql_host] = mysql_host }
+  opts.on("--mysql-username MYSQL_USERNAME") { |username| options[:mysql_username] = mysql_username }
+  opts.on("--mysql-password MYSQL_PASSWORD") { |password| options[:mysql_password] = mysql_password }
+  opts.on("--mysql-port MYSQL_PORT") { |mysql_port| options[:mysql_port] = mysql_port }
+
+  opts.on "--help" do
+    puts opts
+    exit 0
+  end 
+end.parse!
+
+begin
+  Timeout::timeout 30 do
+    Net::SSH::Gateway.new(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true).open(options[:mysql_host], options[:mysql_port]) do |port| 
+      begin
+        client = Mysql2::Client.new(:host => "127.0.0.1", :username => options[:mysql_username], :password => options[:mysql_password], :port => port)
+      rescue => e
+        puts "MYSQL CRITICAL - #{e.message}"
+        exit 2
+      end
+
+      client.query("show slave status").each do |status|
+        if status["Slave_IO_Running"] != "Yes" || status["Slave_SQL_Running"] != "Yes"
+          puts "MYSQL CRITICAL - Replication errors found"
+          exit 2
+        else
+          puts "MYSQL OK - The Replication is working"
+          exit 0
+        end 
+      end
+
+      puts "MYSQL CRITICAL - No replication found"
+      exit 2
+    end
+  end
+rescue => e
+  puts "MYSQL CRITICAL - #{e.message}"
+  exit 2
+end
+

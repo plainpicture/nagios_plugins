@@ -1,0 +1,65 @@
+#!/usr/bin/ruby
+
+require "rubygems"
+require "bundler/setup"
+require "optparse"
+require "timeout"
+require "net/ssh/gateway"
+require "rest-client"
+require "json"
+
+options = {
+  :host => "127.0.0.1",
+  :username => "root",
+  :key_path => "~/.ssh/id_rsa",
+  :es_host => "127.0.0.1",
+  :es_port => 9200,
+  :es_nodes => 3,
+  :es_data_nodes => 3
+}
+
+OptionParser.new do |opts|
+  opts.on("--host HOST") { |host| options[:host] = host }
+  opts.on("--username USERNAME") { |username| options[:username] = username }
+  opts.on("--key-path KEY_PATH") { |key_path| options[:key_path] = key_path }
+  opts.on("--es-host ES_HOST") { |es_host| options[:es_host] = es_host }
+  opts.on("--es-port ES_PORT") { |es_port| options[:es_port] = es_port }
+  opts.on("--es-nodes ES_NODES") { |es_nodes| options[:es_nodes] = es_nodes.to_i }
+  opts.on("--es-data-nodes ES_DATA_NODES") { |es_data_nodes| options[:es_data_nodes] = es_data_nodes.to_i }
+
+  opts.on "--help" do
+    puts opts
+    exit 0
+  end
+end.parse!
+
+begin
+  Timeout::timeout 30 do
+    Net::SSH::Gateway.new(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true).open(options[:es_host], options[:es_port]) do |port|
+      JSON.parse(RestClient.get("http://127.0.0.1:#{port}/_cluster/health")).tap do |result|
+        if result["status"] != "green"
+          puts "ELASTICSEARCH CRITICAL - Status: #{result["status"]}"
+          exit 2
+        end
+
+        if result["number_of_nodes"].to_i != options[:es_nodes]
+          puts "ELASTICSEARCH CRITICAL - Nodes: #{options[:es_nodes]} expected, #{result["number_of_nodes"]} found"
+          exit 2
+        end
+
+        if result["number_of_data_nodes"].to_i != options[:es_data_nodes]
+          puts "ELASTICSEARCH CRITICAL - Data nodes: #{options[:es_data_nodes]} expected, #{result["number_of_data_nodes"]} found"
+          exit 2
+        end
+
+        puts "ELASTICSEARCH OK - Status: #{result["status"]}, nodes: #{result["number_of_nodes"]}, data nodes: #{result["number_of_data_nodes"]}"
+        exit 0
+      end
+    end
+  end
+rescue => e
+  puts "ELASTICSEARCH CRITICAL - #{e.message}"
+  exit 2
+end
+
+

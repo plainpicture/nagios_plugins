@@ -1,0 +1,52 @@
+#!/usr/bin/ruby
+
+require "rubygems"
+require "bundler/setup"
+require "optparse"
+require "timeout"
+require "net/ssh"
+
+options = {
+  :host => "127.0.0.1",
+  :username => "root",
+  :key_path => "~/.ssh/id_rsa",
+  :name => "unknown"
+}
+
+OptionParser.new do |opts|
+  opts.on("--host HOST") { |host| options[:host] = host } 
+  opts.on("--username USERNAME") { |username| options[:username] = username }
+  opts.on("--key-path KEY_PATH") { |key_path| options[:key_path] = key_path }
+  opts.on("--name NAME") { |name| options[:name] = name }
+  opts.on("--count COUNT") { |count| options[:count] = count.to_i }
+
+  opts.on "--help" do
+    puts opts
+    exit 0
+  end 
+end.parse!
+
+begin
+  Timeout::timeout 30 do
+    Net::SSH.start(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true) do |ssh|
+      begin
+        output = ssh.exec!("ps ax | grep '#{options[:name]}' | grep -v grep | wc -l").chomp
+
+        if output.to_i != options[:count]
+          puts "PROCESS CRITICAL - #{output}/#{options[:count]} processes '#{options[:name]}' running"
+          exit 2
+        else
+          puts "PROCESS OK - #{output}/#{options[:count]} processes '#{options[:name]}' running"
+          exit 0
+        end
+      rescue => e
+        puts "PROCESS CRITICAL - #{e.message}"
+        exit 2
+      end
+    end
+  end
+rescue => e
+  puts "PROCESS CRITICAL - #{e.message}"
+  exit 2
+end
+

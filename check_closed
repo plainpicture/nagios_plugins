@@ -1,0 +1,34 @@
+#!/usr/bin/ruby
+
+require "socket"
+require "timeout"
+require "optparse"
+
+options = {}
+
+OptionParser.new do |opts|
+  opts.on("--host HOST") { |host| options[:host] = host } 
+  opts.on("--port PORT") { |port| options[:port] = port }
+
+  opts.on("--help") do
+    puts opts
+    exit 0
+  end 
+end.parse!
+
+begin
+  Timeout::timeout(3) { TCPSocket.new(options[:host], options[:port]).close }
+
+  puts "PORT CRITICAL - port #{options[:port]} is open"
+  exit 2
+rescue Timeout::Error
+  puts "PORT OK - Port #{options[:port]} timed out"
+  exit 0
+rescue Errno::ECONNREFUSED
+  puts "PORT OK - Port #{options[:port]} is closed"
+  exit 0
+rescue => e
+  puts "PORT CRITICAL - #{e.message}"
+  exit 2
+end
+
