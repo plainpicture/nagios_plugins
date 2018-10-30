@@ -17,7 +17,7 @@ OptionParser.new do |opts|
 end.parse!
 
 begin
-  Timeout::timeout(3) { TCPSocket.new(options[:host], options[:port]).close }
+  Timeout.timeout(3) { TCPSocket.new(options[:host], options[:port]).close }
 
   puts "PORT CRITICAL - port #{options[:port]} is open"
   exit 2

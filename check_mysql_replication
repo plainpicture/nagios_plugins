@@ -8,13 +8,13 @@ require "timeout"
 require "net/ssh/gateway"
 
 options = {
-  :host => "127.0.0.1",
-  :username => "root",
-  :key_path => "~/.ssh/id_rsa",
-  :mysql_host => "127.0.0.1",
-  :mysql_username => "root",
-  :mysql_password => "",
-  :mysql_port => 3306
+  host: "127.0.0.1",
+  username: "root",
+  key_path: "~/.ssh/id_rsa",
+  mysql_host: "127.0.0.1",
+  mysql_username: "root",
+  mysql_password: "",
+  mysql_port: 3306
 }
 
 OptionParser.new do |opts|
@@ -33,10 +33,10 @@ OptionParser.new do |opts|
 end.parse!
 
 begin
-  Timeout::timeout 30 do
-    Net::SSH::Gateway.new(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true).open(options[:mysql_host], options[:mysql_port]) do |port| 
+  Timeout.timeout(30) do
+    Net::SSH::Gateway.new(options[:host], options[:username], keys: [options[:key_path]], keys_only: true).open(options[:mysql_host], options[:mysql_port]) do |port| 
       begin
-        client = Mysql2::Client.new(:host => "127.0.0.1", :username => options[:mysql_username], :password => options[:mysql_password], :port => port)
+        client = Mysql2::Client.new(host: "127.0.0.1", username: options[:mysql_username], password: options[:mysql_password], port: port)
       rescue => e
         puts "MYSQL CRITICAL - #{e.message}"
         exit 2

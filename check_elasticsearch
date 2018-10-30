@@ -9,13 +9,13 @@ require "rest-client"
 require "json"
 
 options = {
-  :host => "127.0.0.1",
-  :username => "root",
-  :key_path => "~/.ssh/id_rsa",
-  :es_host => "127.0.0.1",
-  :es_port => 9200,
-  :es_nodes => 3,
-  :es_data_nodes => 3
+  host: "127.0.0.1",
+  username: "root",
+  key_path: "~/.ssh/id_rsa",
+  es_host: "127.0.0.1",
+  es_port: 9200,
+  es_nodes: 3,
+  es_data_nodes: 3
 }
 
 OptionParser.new do |opts|
@@ -34,8 +34,8 @@ OptionParser.new do |opts|
 end.parse!
 
 begin
-  Timeout::timeout 30 do
-    Net::SSH::Gateway.new(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true).open(options[:es_host], options[:es_port]) do |port|
+  Timeout.timeout(30) do
+    Net::SSH::Gateway.new(options[:host], options[:username], keys: [options[:key_path]], keys_only: true).open(options[:es_host], options[:es_port]) do |port|
       JSON.parse(RestClient.get("http://127.0.0.1:#{port}/_cluster/health")).tap do |result|
         if result["status"] != "green"
           puts "ELASTICSEARCH CRITICAL - Status: #{result["status"]}"

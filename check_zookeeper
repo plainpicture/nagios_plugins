@@ -7,10 +7,10 @@ require "timeout"
 require "net/ssh"
 
 options = {
-  :host => "127.0.0.1",
-  :username => "root",
-  :key_path => "~/.ssh/id_rsa",
-  :name => "unknown"
+  host: "127.0.0.1",
+  username: "root",
+  key_path: "~/.ssh/id_rsa",
+  name: "unknown"
 }
 
 OptionParser.new do |opts|
@@ -25,8 +25,8 @@ OptionParser.new do |opts|
 end.parse!
 
 begin
-  Timeout::timeout 30 do
-    Net::SSH.start(options[:host], options[:username], :keys => [options[:key_path]], :keys_only => true) do |ssh|
+  Timeout.timeout(30) do
+    Net::SSH.start(options[:host], options[:username], keys: [options[:key_path]], keys_only: true) do |ssh|
       begin
         output = ssh.exec!("echo stat | nc localhost 2181")
 
