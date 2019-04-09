@@ -17,11 +17,6 @@ CRIT = 96
 
 def get_value(keyname):
     """Get value from given metric."""
-    # print(app_queue_last_created_hours)
-    # [{'name': 'app_queue_last_created_hours',
-    #   'help': '',
-    #   'type': 'UNTYPED',
-    #   'metrics': [{'value': '15'}]}]
     value = [key for key in metrics if key['name'] == keyname]
     metrics_value = value[0]['metrics'][0]['value']
     return(metrics_value)
@@ -29,9 +24,6 @@ def get_value(keyname):
 
 if __name__ == "__main__":
     try:
-        # For developing: Use local file to fake results:
-        # result = subprocess.run(['prom2json', 'dummy.txt'],
-        #                         stdout=subprocess.PIPE)
         result = subprocess.run(
             ['prom2json', 'https://www.plainpicture.com/metrics'],
             stdout=subprocess.PIPE,
@@ -52,14 +44,14 @@ if __name__ == "__main__":
         print('Unknown: Cant parse JSON (' + exception_msg + ')')
         sys.exit(3)
 
-    last_created_hours = get_value('app_queue_last_created_hours')
-    last_generated_hours = get_value('app_queue_last_generated_hours')
+    last_created_hours = get_value('last_created_hours')
+    last_generated_hours = get_value('last_generated_hours')
     last_exported_from_photobay_hours = \
-        get_value('app_queue_last_exported_from_photobay_hours')
+        get_value('last_exported_from_photobay_hours')
     last_photobay_synchronization_timestamp = \
-        get_value('app_queue_last_photobay_synchronization_timestamp')
+        get_value('last_photobay_synchronization_timestamp')
 
-    summary = 'app_queue_last_created_hours: ' + last_created_hours + ', ' \
+    summary = 'last_created_hours: ' + last_created_hours + ', ' \
               'last_generated_hours: ' + last_generated_hours + ', ' \
               'last_exported_from_photobay_hours:' + \
               last_exported_from_photobay_hours + ', ' + \
