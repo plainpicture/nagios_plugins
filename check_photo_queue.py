@@ -36,7 +36,6 @@ if __name__ == "__main__":
         sys.exit(3)
 
     metrics_str = result.stdout.decode('utf-8')
-
     try:
         metrics = json.loads(metrics_str)
     except Exception:
@@ -44,25 +43,25 @@ if __name__ == "__main__":
         print('Unknown: Cant parse JSON (' + exception_msg + ')')
         sys.exit(3)
 
-    last_created_hours = get_value('last_created_hours')
-    last_generated_hours = get_value('last_generated_hours')
-    last_exported_from_photobay_hours = \
-        get_value('last_exported_from_photobay_hours')
+    last_created_at = get_value('last_created_at')
+    last_generated_at = get_value('last_generated_at')
+    last_exported_from_photobay_at = \
+        get_value('last_exported_from_photobay_at')
     last_photobay_synchronization_timestamp = \
         get_value('last_photobay_synchronization_timestamp')
 
-    summary = 'last_created_hours: ' + last_created_hours + ', ' \
-              'last_generated_hours: ' + last_generated_hours + ', ' \
-              'last_exported_from_photobay_hours:' + \
-              last_exported_from_photobay_hours + ', ' + \
+    summary = 'last_created_at: ' + last_created_at + ', ' \
+              'last_generated_at: ' + last_generated_at + ', ' \
+              'last_exported_from_photobay_at:' + \
+              last_exported_from_photobay_at + ', ' + \
               'last_photobay_synchronization_timestamp: ' + \
               last_photobay_synchronization_timestamp
 
-    if int(last_generated_hours) >= CRIT:
+    if int(last_generated_at) >= CRIT:
         print('CRITICAL: ' + summary)
         sys.exit(2)
     else:
-        if int(last_generated_hours) >= WARN:
+        if int(last_generated_at) >= WARN:
             print('WARNING: ' + summary)
             sys.exit(1)
         else:
